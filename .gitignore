@@ -1,0 +1,30 @@
+# Visual Studio / Rider 用户特定文件
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# 构建产物
+bin/
+obj/
+out/
+publish/
+release/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# 日志与临时
+*.log
+*.tmp
+*.bak
+*.swp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

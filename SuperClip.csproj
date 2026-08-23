@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- 目标框架：.NET Core 3.1，最后一个官方支持 Windows 7 的 .NET；
+         同时自包含运行时体积比 .NET 8 更小。WPF 在 3.1 完整支持。 -->
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <!-- 精简：只打包必需语言的卫星程序集（不会让中文 IME 失效） -->
+    <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+    <RootNamespace>SuperClip</RootNamespace>
+    <AssemblyName>SuperClip</AssemblyName>
+    <!-- v2.0 大版本：自此定型，代码冻结；仅修 bug 才会出 2.0.x 补丁。
+         AssemblyVersion/FileVersion 用 4 段，Version（显示用）3 段，
+         统一通过 NuGet PackageVersion 风格管理；Win32 ProductVersion 取自 FileVersion -->
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Product>SuperClip 超级剪贴板</Product>
+    <Company>Mr lin</Company>
+    <Copyright>© Mr lin. 本地运行，无网络依赖。</Copyright>
+    <Description>Windows 超级剪贴板：后台监听剪贴板、Excel 表格自动拆分、搜索/收藏/双粘贴模式、托盘常驻。</Description>
+    <NeutralLanguage>zh-Hans</NeutralLanguage>
+    <ApplicationIcon>SuperClip.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- 发布配置：固化到 csproj，dotnet build 也会生效。
+       单文件 + 自包含 + R2R；Win7+ 兼容；精简卫星程序集；不分发 .pdb（产物仅 SuperClip.exe）。
+       注意：WPF 不支持 PublishTrimmed（曾触发 NETSDK1168），故不开 IL 剪裁。
+       注意：未启用 InvariantGlobalization —— WPF TextBox 内部查询 InputLanguageManager，
+            中文/日文等 IME 用户会触发 CultureNotFoundException；保留全量 ICU 区域数据。 -->
+  <PropertyGroup>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishPdbFile>false</PublishPdbFile>
+    <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <Resource Include="SuperClip.ico" />
+  </ItemGroup>
+
+</Project>

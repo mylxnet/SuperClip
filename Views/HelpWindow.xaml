@@ -1,0 +1,122 @@
+<Window x:Class="SuperClip.Views.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="使用帮助 · SuperClip" Height="580" Width="500"
+        WindowStyle="None" ResizeMode="NoResize" Background="#FAFAFA"
+        FontFamily="Microsoft YaHei, SimSun, sans-serif"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <!-- 小节标题 -->
+        <Style x:Key="H" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#37474F"/>
+            <Setter Property="Margin" Value="0,12,0,2"/>
+        </Style>
+        <!-- 小节正文 -->
+        <Style x:Key="B" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+        <!-- 行内强调（快捷键/按钮名） -->
+        <Style x:Key="K" TargetType="Run">
+            <Setter Property="Foreground" Value="#00897B"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <Grid Grid.Row="0" Background="#263238" MouseLeftButtonDown="Header_MouseDown">
+            <TextBlock Text="使用帮助 · SuperClip 新手引导" Foreground="White" FontSize="14"
+                       VerticalAlignment="Center" Margin="14,0,0,0"/>
+            <Button Content="✕" Width="40" Height="40" HorizontalAlignment="Right"
+                    Background="Transparent" BorderThickness="0" Foreground="White"
+                    FontSize="14" Cursor="Hand" Click="Close_Click"/>
+        </Grid>
+
+        <!-- 内容 -->
+        <ScrollViewer Grid.Row="1" Margin="16,8,16,4" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="欢迎使用 SuperClip 超级剪贴板" FontSize="17" FontWeight="Bold"
+                           Foreground="#00897B" Margin="0,4,0,2"/>
+                <TextBlock Style="{StaticResource B}" Foreground="#777"
+                           Text="本地运行，无网络依赖。照着下面 9 步，1 分钟就能上手。"/>
+
+                <TextBlock Style="{StaticResource H}" Text="1. 呼出 / 隐藏窗口"/>
+                <TextBlock Style="{StaticResource B}">
+                    随时按 <Run Style="{StaticResource K}">Ctrl + `</Run>（数字 1 左边那个键）呼出或隐藏窗口。
+                    即使关闭窗口，程序仍在后台监听剪贴板（系统托盘常驻）。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="2. 自动记录复制内容"/>
+                <TextBlock Style="{StaticResource B}">
+                    复制任意文本或 Excel 表格，会自动进入列表，并按内容去重；超过 500 条时自动清理最旧的（收藏除外）。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="3. 两种粘贴模式"/>
+                <TextBlock Style="{StaticResource B}">
+                    <Run Style="{StaticResource K}">普通模式</Run>：双击条目，粘贴到当前光标处（条目变灰、位置不变）。
+                </TextBlock>
+                <TextBlock Style="{StaticResource B}">
+                    <Run Style="{StaticResource K}">快速模式</Run>：单击选中一条，按 <Run Style="{StaticResource K}">空格</Run> 即粘贴；
+                    粘贴后该条沉底变灰，顶部自动选中下一条，可连续按空格依次粘贴。
+                </TextBlock>
+                <TextBlock Style="{StaticResource B}" Foreground="#777">
+                    切换模式：右键菜单「模式」（普通 ⇄ 快速）。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="4. 收藏重要条目"/>
+                <TextBlock Style="{StaticResource B}">
+                    点条目右侧的 <Run Style="{StaticResource K}">☆</Run> 即可收藏（变 ★），收藏项置顶并永久保留，
+                    清除与自动清理都不会删除它。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="5. 绑定粘贴目标窗口"/>
+                <TextBlock Style="{StaticResource B}">
+                    点工具栏的「靶心」图标，鼠标变成十字，再去点一下你要粘贴的程序窗口（如 Excel、浏览器），
+                    即完成绑定，粘贴更精准。当前绑定名显示在窗口底部状态栏左侧。
+                </TextBlock>
+                <TextBlock Style="{StaticResource B}" Foreground="#777">
+                    靶心图标颜色：<Run Style="{StaticResource K}">红色</Run> = 未绑定，<Run Style="{StaticResource K}">绿色</Run> = 已绑定成功。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="6. 复制模式：一般 / 表格"/>
+                <TextBlock Style="{StaticResource B}">
+                    右键菜单「复制模式」可切换：<Run Style="{StaticResource K}">一般复制</Run>（默认，多行纯文本不拆分）；
+                    <Run Style="{StaticResource K}">表格复制</Run>（把单列 / 多行也按单元格拆成多条，方便逐格粘贴）。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="7. 搜索与筛选"/>
+                <TextBlock Style="{StaticResource B}">
+                    顶部输入框输入关键词即可搜索（含来源标注）；下拉框可筛选 全部 / 文本 / 表格 / 收藏。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="8. 清除 与 复位"/>
+                <TextBlock Style="{StaticResource B}">
+                    <Run Style="{StaticResource K}">清除</Run>：删除全部记录（含收藏）。
+                    <Run Style="{StaticResource K}">复位</Run>：仅在快速模式下使用，恢复最初顺序并取消所有灰显。
+                </TextBlock>
+
+                <TextBlock Style="{StaticResource H}" Text="9. 悬浮置顶（默认开启）"/>
+                <TextBlock Style="{StaticResource B}">
+                    窗口<Run Style="{StaticResource K}">默认已悬浮置顶</Run>（标题栏 📌 高亮），始终显示在最前，方便连续操作；
+                    点一下 📌 可关闭置顶，让出视线。
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 底部署名 -->
+        <Border Grid.Row="2" Background="#F0F0F0" Padding="14,10,14,10">
+            <TextBlock Text="by Mr lin" Foreground="#9E9E9E" FontSize="11" HorizontalAlignment="Right"/>
+        </Border>
+    </Grid>
+</Window>

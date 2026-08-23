@@ -1,0 +1,235 @@
+<Window x:Class="SuperClip.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SuperClip.Views"
+        Title="SuperClip" Height="600" Width="380"
+        WindowStyle="None" ResizeMode="CanResize"
+        WindowStartupLocation="Manual"
+        Background="#FAFAFA"
+        FontFamily="Microsoft YaHei, SimSun, sans-serif"
+        PreviewMouseRightButtonDown="Window_PreviewRightButtonDown">
+    <Window.Resources>
+        <local:IndexConverter x:Key="IndexConv"/>
+        <local:FilterTypeConverter x:Key="FilterConv"/>
+        <local:StarConverter x:Key="StarConv"/>
+        <local:EmptyToCollapsedConverter x:Key="EmptyToCollapsed"/>
+        <local:EmptyToVisibleConverter x:Key="EmptyToVisible"/>
+
+        <!-- 关联按钮靶心图标颜色：未绑定=红，已绑定=绿（代码动态切换） -->
+        <SolidColorBrush x:Key="BindIconBrush" Color="#E53935"/>
+
+        <!-- 标题栏按钮 -->
+        <Style x:Key="TitleBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3E3E42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 模式切换：独立小按钮，缩小点击范围，避免拖窗误触 -->
+        <Style x:Key="ModeChip" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#5A5A5E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3E3E42"/>
+                    <Setter Property="BorderBrush" Value="#7A7A7E"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 普通工具栏按钮 -->
+        <Style x:Key="ToolBtn" TargetType="Button">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#D0D0D0"/>
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EFF5F4"/>
+                    <Setter Property="BorderBrush" Value="#00897B"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 列表项容器：卡片化 + 状态高亮 -->
+        <Style x:Key="ItemCard" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="6,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="BorderBrush" Value="#00897B"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding IsPasted}" Value="True">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                    <Setter Property="Background" Value="#FFF8E1"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 右键菜单：主窗口内右键弹出，含模式切换、复制模式开关、帮助与关于 -->
+        <ContextMenu x:Key="MainMenu">
+            <MenuItem Tag="Mode" Header="模式" Click="MenuMode_Click"
+                      ToolTip="点击在 普通 / 快速 模式间切换"/>
+            <MenuItem Tag="CopyMode" Header="复制模式" Click="MenuCopyMode_Click"
+                      ToolTip="一般复制：多行纯文本不拆分；表格复制：单列/多行也按单元格拆分"/>
+            <Separator/>
+            <MenuItem Header="使用帮助" Click="MenuHelp_Click"
+                      ToolTip="首次使用？点这里看新手引导"/>
+            <MenuItem Header="关于 SuperClip" Click="MenuAbout_Click"/>
+        </ContextMenu>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="22"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <Grid Grid.Row="0" Background="#263238" MouseLeftButtonDown="TitleBar_MouseDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <!-- 标题栏左侧标题（可拖拽移动窗口） -->
+            <TextBlock Grid.Column="0" Text="SuperClip" Foreground="White" FontSize="14"
+                       FontWeight="Bold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnMin" Style="{StaticResource TitleBtn}" Content="—" Click="BtnMin_Click" ToolTip="收起到托盘"/>
+                <Button x:Name="btnTop" Style="{StaticResource TitleBtn}" Content="📌" Click="BtnTop_Click" ToolTip="悬浮置顶"/>
+                <Button x:Name="btnClose" Style="{StaticResource TitleBtn}" Content="✕" Click="BtnClose_Click" ToolTip="关闭软件"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 工具栏 -->
+        <Grid Grid.Row="1" Background="#F0F0F0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" Margin="8,8,8,4">
+                <TextBox x:Name="txtSearch" Padding="8,5" FontSize="13"
+                         BorderBrush="#D0D0D0" Background="White"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="请输入搜索内容" Foreground="#BDBDBD" FontSize="13"
+                           Margin="11,0,0,0" VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Visibility="{Binding SearchText, Converter={StaticResource EmptyToVisible}}"/>
+            </Grid>
+            <WrapPanel Grid.Row="1" Margin="8,0,8,8">
+                <ComboBox x:Name="cmbFilter" Width="110" Margin="0,0,6,0"
+                          SelectionChanged="CmbFilter_SelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource FilterConv}}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button x:Name="btnBind" Width="64" Margin="0,0,6,0"
+                        Style="{StaticResource ToolBtn}" Click="BtnBind_Click"
+                        ToolTip="绑定粘贴目标：点击后鼠标变十字，点选目标程序窗口（如 Excel/浏览器）即完成绑定">
+                    <Viewbox Width="16" Height="16">
+                        <Canvas Width="24" Height="24">
+                            <Ellipse Width="18" Height="18" Canvas.Left="3" Canvas.Top="3"
+                                     Stroke="{StaticResource BindIconBrush}" StrokeThickness="2" Fill="Transparent"/>
+                            <Ellipse Width="6" Height="6" Canvas.Left="9" Canvas.Top="9" Fill="{StaticResource BindIconBrush}"/>
+                            <Line X1="12" Y1="0" X2="12" Y2="24" Stroke="{StaticResource BindIconBrush}" StrokeThickness="1.2"/>
+                            <Line X1="0" Y1="12" X2="24" Y2="12" Stroke="{StaticResource BindIconBrush}" StrokeThickness="1.2"/>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+                <Button Content="清除" Width="64" Margin="0,0,6,0" Style="{StaticResource ToolBtn}" Click="BtnClear_Click"/>
+                <Button Content="复位" Width="64" Style="{StaticResource ToolBtn}" Click="BtnReset_Click"/>
+            </WrapPanel>
+        </Grid>
+
+        <!-- 列表 -->
+        <ListBox Grid.Row="2" x:Name="lstItems"
+                 ItemsSource="{Binding DisplayItems}"
+                 SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                 ItemContainerStyle="{StaticResource ItemCard}"
+                 MouseDoubleClick="LstItems_MouseDoubleClick"
+                 SelectionChanged="LstItems_SelectionChanged"
+                 HorizontalContentAlignment="Stretch"
+                 BorderThickness="0" Background="#FAFAFA">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="White" BorderBrush="#E5E5E5" BorderThickness="1"
+                            CornerRadius="6" Padding="8,6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- 序号：基于在 DisplayItems 集合中的实际位置计算 -->
+                            <TextBlock Grid.Column="0" Foreground="#B0B0B0" FontSize="11"
+                                       Margin="2,0,10,0" VerticalAlignment="Top">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource IndexConv}">
+                                        <Binding />
+                                        <Binding RelativeSource="{RelativeSource AncestorType=ListBox}" Path="ItemsSource" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                            <StackPanel Grid.Column="1">
+                                <!-- 主内容：清晰可读 -->
+                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="13"
+                                           Foreground="#222" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
+                                <!-- 来源标注：弱化灰字，不抢视觉 -->
+                                <TextBlock Text="{Binding SourceLabel}" FontSize="10" Foreground="#9E9E9E"
+                                           Margin="0,2,0,0" Visibility="{Binding SourceLabel, Converter={StaticResource EmptyToCollapsed}}"/>
+                                <TextBlock Text="{Binding Timestamp, StringFormat=HH:mm:ss}" FontSize="10" Foreground="#C0C0C0"/>
+                            </StackPanel>
+                            <!-- 收藏 -->
+                            <Button Grid.Column="2" Content="{Binding IsFavorite, Converter={StaticResource StarConv}}"
+                                    Click="Favorite_Click" Background="Transparent" BorderThickness="0"
+                                    FontSize="16" Foreground="#FBC02D" Width="30" VerticalAlignment="Top"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- 状态栏：左=绑定进程名，右=署名 -->
+        <Border Grid.Row="3" Background="#263238" BorderThickness="0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="txtBindName" Grid.Column="0" Text="未绑定"
+                           Foreground="#90A4AE" FontSize="11" VerticalAlignment="Center"
+                           Margin="10,0,0,0" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="1" Text="Mr lin" Foreground="#B0BEC5" FontSize="11"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
