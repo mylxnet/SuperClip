@@ -74,7 +74,7 @@ SuperClip 是一个 Windows 桌面剪贴板增强工具，**常驻后台 + 托�
 
 #### 用户（直接使用）
 
-1. 在 [Releases](https://github.com/your-username/SuperClip/releases) 下载 `SuperClip_v2.0_便携版.zip`
+1. 在 [Releases](https://github.com/mylxnet/SuperClip/releases) 下载 `SuperClip_v2.0_便携版.zip`
 2. 解压到任意目录
 3. 右键 `install.bat` → 「以管理员身份运行」
 4. 双击桌面「SuperClip」图标启动
@@ -83,7 +83,7 @@ SuperClip 是一个 Windows 桌面剪贴板增强工具，**常驻后台 + 托�
 #### 开发者（从源码构建）
 
 ```bash
-git clone https://github.com/your-username/SuperClip.git
+git clone https://github.com/mylxnet/SuperClip.git
 cd SuperClip
 build.bat
 ```
@@ -201,7 +201,7 @@ SuperClip is a Windows desktop clipboard enhancer that runs in the background wi
 ### Build
 
 ```bash
-git clone https://github.com/your-username/SuperClip.git
+git clone https://github.com/mylxnet/SuperClip.git
 cd SuperClip
 build.bat
 ```
