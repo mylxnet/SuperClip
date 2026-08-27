@@ -52,6 +52,7 @@ SuperClip 是一个 Windows 桌面剪贴板增强工具，**常驻后台 + 托�
 ### 📸 截图
 
 > 启动后默认停靠在屏幕右侧
+<img width="359" height="587" alt="image" src="https://github.com/user-attachments/assets/3f969130-38ea-435c-9f86-05effea36813" />
 
 ```
 ┌─ SuperClip ───────────────────┐
