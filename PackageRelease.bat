@@ -2,7 +2,8 @@
 REM ============================================================
 REM  SuperClip 便携安装包（ZIP 形态）
 REM  流程：调 CleanAndBuild.bat 发布 → 抽取带版本号的单文件 exe →
-REM       打包 install.bat / uninstall.bat / SuperClip_vX.Y.Z.exe / README 到 release\SuperClip_vX.Y.Z_便携版.zip
+REM       打包 install.bat / uninstall.bat / SuperClip_vX.Y.Z.exe / README 到 release\SuperClip_vX.Y.Z_portable.zip
+REM       （GitHub Releases 附件名不支持中文字符，统一用英文 portable 命名）
 REM  用户解压后双击 install.bat 即可装到 %ProgramFiles%\SuperClip\（统一安装为 SuperClip.exe）
 REM  并创建开始菜单/桌面快捷方式。
 REM  卸载：控制面板「程序和功能」/ 重跑 uninstall.bat。
@@ -21,8 +22,8 @@ if "%VERSION%"=="" set VERSION=1.1.2
 echo 检出版本: %VERSION%
 
 set PUB=bin\Release\netcoreapp3.1\win-x64\publish
-set OUT_DIR=release\SuperClip_v%VERSION%_便携版
-set OUT_ZIP=release\SuperClip_v%VERSION%_便携版.zip
+set OUT_DIR=release\SuperClip_v%VERSION%_portable
+set OUT_ZIP=release\SuperClip_v%VERSION%_portable.zip
 
 if not exist "%PUB%\SuperClip.exe" (
     echo 错误：未找到发布产物 %PUB%\SuperClip.exe
