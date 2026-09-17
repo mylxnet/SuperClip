@@ -1,9 +1,10 @@
 @echo off
 REM ============================================================
 REM  SuperClip 便携安装包（ZIP 形态）
-REM  流程：调 CleanAndBuild.bat 发布 → 抽取 SuperClip.exe →
-REM       打包 install.bat / uninstall.bat / SuperClip.exe / README 到 release\SuperClip_vX.Y.Z_便携版.zip
-REM  用户解压后双击 install.bat 即可装到 %ProgramFiles%\SuperClip\ 并创建开始菜单/桌面快捷方式。
+REM  流程：调 CleanAndBuild.bat 发布 → 抽取带版本号的单文件 exe →
+REM       打包 install.bat / uninstall.bat / SuperClip_vX.Y.Z.exe / README 到 release\SuperClip_vX.Y.Z_便携版.zip
+REM  用户解压后双击 install.bat 即可装到 %ProgramFiles%\SuperClip\（统一安装为 SuperClip.exe）
+REM  并创建开始菜单/桌面快捷方式。
 REM  卸载：控制面板「程序和功能」/ 重跑 uninstall.bat。
 REM ============================================================
 setlocal
@@ -35,7 +36,12 @@ mkdir "%OUT_DIR%"
 
 echo.
 echo 拷贝产物到打包目录 ...
-copy /y "%PUB%\SuperClip.exe" "%OUT_DIR%\"
+REM 优先取 csproj 发布目标生成的版本化单文件；不存在则退回复制+重命名
+if exist "%PUB%\SuperClip_v%VERSION%.exe" (
+    copy /y "%PUB%\SuperClip_v%VERSION%.exe" "%OUT_DIR%\"
+) else (
+    copy /y "%PUB%\SuperClip.exe" "%OUT_DIR%\SuperClip_v%VERSION%.exe"
+)
 copy /y "README.md" "%OUT_DIR%\"
 copy /y "installer\install.bat" "%OUT_DIR%\"
 copy /y "installer\uninstall.bat" "%OUT_DIR%\"

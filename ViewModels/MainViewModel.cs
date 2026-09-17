@@ -195,9 +195,10 @@ namespace SuperClip.ViewModels
 
         public void Reset()
         {
-            // 仅快速模式有意义：清除灰显并恢复最初（按时间）顺序
+            // 仅快速模式有意义：清除灰显并恢复最初（按时间）顺序。
+            // 收藏区与非收藏区统一按时间降序（最新在前），与列表其他时刻的排序不变式一致。
             foreach (var it in Items) it.IsPasted = false;
-            var favs = Items.Where(x => x.IsFavorite).OrderBy(x => x.Timestamp).ToList();
+            var favs = Items.Where(x => x.IsFavorite).OrderByDescending(x => x.Timestamp).ToList();
             var others = Items.Where(x => !x.IsFavorite).OrderByDescending(x => x.Timestamp).ToList();
             var target = favs.Concat(others).ToList();
             SyncInPlace(Items, target);

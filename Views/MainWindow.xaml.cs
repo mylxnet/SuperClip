@@ -35,7 +35,7 @@ namespace SuperClip.Views
         private IntPtr _mouseHook;
         private WinApi.LowLevelMouseProc? _mouseProc;
 
-        private const string AppVersion = "2.0.0";
+        private const string AppVersion = "2.0.1";
 
         // 绑定图标颜色：未绑定=红，已绑定=绿
         private static readonly Color BindColorRed = Color.FromRgb(0xE5, 0x39, 0x35);
@@ -122,6 +122,20 @@ namespace SuperClip.Views
         {
             // 记录呼出前的活动窗口，作为后续粘贴的目标（比 Deactivated 时机更可靠）
             _lastExternalWindow = WinApi.GetForegroundWindow();
+            // 绑定窗口存活检查：绑定的窗口已关闭则自动改绑到呼出前的活动窗口，
+            // 靶心图标与状态栏随之刷新，避免「图标绿色但实际已未绑定」的误导（R5）。
+            if (_boundWindow != IntPtr.Zero && !WinApi.IsWindow(_boundWindow))
+            {
+                _boundWindow = IntPtr.Zero;
+                _boundProcessName = "未绑定";
+                if (_lastExternalWindow != IntPtr.Zero)
+                {
+                    _boundWindow = _lastExternalWindow;
+                    _boundProcessName = ResolveProcessName(_lastExternalWindow);
+                }
+                txtBindName.Text = _boundProcessName;
+                UpdateBindIcon();
+            }
             // 首次呼出：默认绑定到当前正在使用的程序（如 Excel / 浏览器）
             if (!_boundOnce)
             {

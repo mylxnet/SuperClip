@@ -16,9 +16,9 @@
     <!-- v2.0 大版本：自此定型，代码冻结；仅修 bug 才会出 2.0.x 补丁。
          AssemblyVersion/FileVersion 用 4 段，Version（显示用）3 段，
          统一通过 NuGet PackageVersion 风格管理；Win32 ProductVersion 取自 FileVersion -->
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <FileVersion>2.0.1.0</FileVersion>
     <Product>SuperClip 超级剪贴板</Product>
     <Company>Mr lin</Company>
     <Copyright>© Mr lin. 本地运行，无网络依赖。</Copyright>
@@ -45,5 +45,15 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <Resource Include="SuperClip.ico" />
   </ItemGroup>
+
+  <!-- 发布后自动生成带版本号的单文件副本：SuperClip_v2.0.1.exe。
+       原始 SuperClip.exe 保留（进程名 / installer 脚本 / 单实例查找依赖固定名），
+       版本化副本仅用于分发识别，不参与运行。 -->
+  <Target Name="CopyVersionedExe" AfterTargets="Publish">
+    <Copy SourceFiles="$(PublishDir)SuperClip.exe"
+          DestinationFiles="$(PublishDir)SuperClip_v$(Version).exe"
+          Condition="Exists('$(PublishDir)SuperClip.exe')" />
+    <Message Importance="high" Text="已生成版本化产物: $(PublishDir)SuperClip_v$(Version).exe" />
+  </Target>
 
 </Project>

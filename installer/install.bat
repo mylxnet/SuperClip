@@ -13,6 +13,13 @@ set EXE=SuperClip.exe
 set STARTMENU=%APPDATA%\Microsoft\Windows\Start Menu\Programs
 set DESKTOP=%USERPROFILE%\Desktop
 
+REM 兼容带版本号的分发文件名（如 SuperClip_v2.0.1.exe）：
+REM 优先用固定名；否则取目录内 SuperClip_v*.exe（多个时取最后一个）。
+REM 安装时统一复制为 %INSTALL_DIR%\SuperClip.exe，固定名不受影响。
+if exist "%EXE%" goto have_exe
+for %%f in (SuperClip_v*.exe) do set EXE=%%f
+:have_exe
+
 REM 检测管理员权限
 net session >nul 2>&1
 if errorlevel 1 (
@@ -22,7 +29,7 @@ if errorlevel 1 (
 )
 
 if not exist "%EXE%" (
-    echo 错误：未找到 %EXE%。请将本文件放在与 SuperClip.exe 同目录后再运行。
+    echo 错误：未找到 SuperClip.exe 或 SuperClip_v*.exe。请将本文件放在与 exe 同目录后再运行。
     pause
     exit /b 1
 )
@@ -31,18 +38,18 @@ echo [1/3] 创建安装目录 %INSTALL_DIR% ...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 echo [2/3] 复制文件 ...
-copy /y "%EXE%" "%INSTALL_DIR%\%EXE%"
+REM 统一安装为固定名 SuperClip.exe（进程名 / 卸载脚本 / 快捷方式都依赖固定名）
+copy /y "%EXE%" "%INSTALL_DIR%\SuperClip.exe"
 
 echo [3/3] 创建快捷方式 ...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$startMenu = [Environment]::GetFolderPath('StartMenu');" ^
   "$desktop = [Environment]::GetFolderPath('Desktop');" ^
   "$installDir = '%INSTALL_DIR%';" ^
-  "$exe = '%EXE%';" ^
   "$s1 = (New-Object -COM WScript.Shell).CreateShortcut((Join-Path $startMenu 'SuperClip.lnk'));" ^
-  "$s1.TargetPath = Join-Path $installDir $exe; $s1.WorkingDirectory = $installDir; $s1.Save();" ^
+  "$s1.TargetPath = Join-Path $installDir 'SuperClip.exe'; $s1.WorkingDirectory = $installDir; $s1.Save();" ^
   "$s2 = (New-Object -COM WScript.Shell).CreateShortcut((Join-Path $desktop 'SuperClip.lnk'));" ^
-  "$s2.TargetPath = Join-Path $installDir $exe; $s2.WorkingDirectory = $installDir; $s2.Save()"
+  "$s2.TargetPath = Join-Path $installDir 'SuperClip.exe'; $s2.WorkingDirectory = $installDir; $s2.Save()"
 
 echo.
 echo 安装完成。
