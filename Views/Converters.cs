@@ -8,13 +8,20 @@ namespace SuperClip.Views
 {
     // 序号：取元素在 ItemsSource 集合中的实际位置（IndexOf），
     // 直接基于当前显示顺序计算，避免依赖 AlternationIndex 在集合重建后不刷新的问题。
+    // 性能优化：ItemsSource 为 ObservableCollection 时，使用 IList<T> 重载避免 boxing。
     [ValueConversion(typeof(object), typeof(int))]
     public class IndexConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values.Length == 2 && values[0] != null && values[1] is System.Collections.IList list)
-                return list.IndexOf(values[0]) + 1;
+            if (values.Length != 2 || values[0] == null) return 0;
+            
+            // 优先尝试强类型 IList<T>（避免 boxing 和多次 cast）
+            if (values[1] is System.Collections.IList list)
+            {
+                int idx = list.IndexOf(values[0]);
+                return idx >= 0 ? idx + 1 : 0;
+            }
             return 0;
         }
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

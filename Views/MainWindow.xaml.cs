@@ -52,7 +52,8 @@ namespace SuperClip.Views
 
             _pasteGuard = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(400)
+                Interval = TimeSpan.FromMilliseconds(1000)  // 从 400ms 延长至 1000ms，
+                // 覆盖目标窗口切换 + 粘贴的完整流程，避免超长延迟场景下的防护窗口关闭
             };
             _pasteGuard.Tick += (_, _) =>
             {
@@ -64,12 +65,50 @@ namespace SuperClip.Views
             _tray = new TrayService(ShowWindow, ExitApp);
             this.PreviewKeyDown += OnPreviewKeyDown;
 
-            // 默认悬浮置顶，并高亮 📌 按钮
-            _topmost = true;
-            Topmost = true;
-            btnTop.Background = new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42));
+            // 加载用户设置：置顶状态、模式、绑定目标
+            var settings = SettingsService.Load();
+            _topmost = settings.Topmost;
+            Topmost = _topmost;
+            btnTop.Background = _topmost
+                ? new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42))
+                : Brushes.Transparent;
 
-            UpdateBindIcon();   // 初始未绑定 → 红色
+            // 应用保存的窗口位置/大小
+            if (settings.Width > 0 && settings.Height > 0)
+            {
+                Width = settings.Width;
+                Height = settings.Height;
+                Left = settings.Left;
+                Top = settings.Top;
+            }
+            else
+            {
+                PositionToRightSide();
+            }
+
+            // 恢复绑定目标（尝试查找进程，若已关闭则回退到未绑定）
+            if (!string.IsNullOrEmpty(settings.BoundProcessName))
+            {
+                _boundProcessName = settings.BoundProcessName;
+                _boundOnce = true;
+                // 尝试通过进程名查找窗口
+                _boundWindow = FindWindowByProcessName(_boundProcessName);
+                if (_boundWindow != IntPtr.Zero)
+                {
+                    _boundProcessName = ResolveProcessName(_boundWindow);
+                    txtBindName.Text = _boundProcessName;
+                    UpdateBindIcon();
+                }
+                else
+                {
+                    _boundWindow = IntPtr.Zero;
+                    _boundProcessName = "未绑定";
+                    txtBindName.Text = _boundProcessName;
+                    UpdateBindIcon();
+                }
+            }
+
+            UpdateBindIcon();   // 初始未绑定 → 红色（若绑定目标已关闭）
 
             // 独立隐藏窗口监听系统剪贴板，主窗口收起后仍持续工作
             _monitor = new ClipboardMonitorService(
@@ -78,6 +117,27 @@ namespace SuperClip.Views
                 () => _lastPastedContent);
 
             SourceInitialized += OnSourceInitialized;
+            Closing += Window_Closing;
+        }
+
+        // 通过进程名查找主窗口句柄（用于恢复绑定目标）
+        private static IntPtr FindWindowByProcessName(string processName)
+        {
+            try
+            {
+                var processes = System.Diagnostics.Process.GetProcessesByName(processName);
+                if (processes.Length > 0)
+                {
+                    // 返回第一个可见窗口的句柄
+                    foreach (var p in processes)
+                    {
+                        if (p.MainWindowHandle != IntPtr.Zero)
+                            return p.MainWindowHandle;
+                    }
+                }
+            }
+            catch { }
+            return IntPtr.Zero;
         }
 
         // ---------- 剪贴板监听 + 热键 ----------
@@ -294,6 +354,17 @@ namespace SuperClip.Views
 
         private void BtnClose_Click(object sender, RoutedEventArgs e) => ExitApp();
 
+        // 窗口关闭时保存位置/大小
+        private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var settings = SettingsService.Load();
+            settings.Left = Left;
+            settings.Top = Top;
+            settings.Width = Width;
+            settings.Height = Height;
+            SettingsService.Save(settings);
+        }
+
         private void ExitApp()
         {
             if (_picking) { WinApi.UnhookWindowsHookEx(_mouseHook); RestoreCursor(); }
@@ -429,8 +500,10 @@ namespace SuperClip.Views
             _lastPastedContent = item.Content; // 内容比对拦截（兜底）
             await PasteService.PasteTextAsync(item.Content, GetPasteTarget());
             _vm.PasteDone(item, moveToEnd);
+            // 粘贴成功/失败后，立即重置防护状态，避免守护定时器误清理其他粘贴会话
+            _internalPaste = false;
+            _lastPastedContent = string.Empty;
             _pasteGuard.Stop();
-            _pasteGuard.Start();         // 400ms 后重置 _internalPaste 与 _lastPastedContent
         }
     }
 }

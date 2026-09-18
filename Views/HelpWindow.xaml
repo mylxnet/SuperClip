@@ -94,6 +94,9 @@
                     右键菜单「复制模式」可切换：<Run Style="{StaticResource K}">一般复制</Run>（默认，多行纯文本不拆分）；
                     <Run Style="{StaticResource K}">表格复制</Run>（把单列 / 多行也按单元格拆成多条，方便逐格粘贴）。
                 </TextBlock>
+                <TextBlock Style="{StaticResource B}" Foreground="#777">
+                    说明：表格中的空单元格不单独记录，但列号保持原值（如第 1 行有「A 空 C」，则记录 A(列1) 和 C(列3)）。
+                </TextBlock>
 
                 <TextBlock Style="{StaticResource H}" Text="7. 搜索与筛选"/>
                 <TextBlock Style="{StaticResource B}">

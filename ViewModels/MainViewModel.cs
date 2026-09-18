@@ -38,6 +38,11 @@ namespace SuperClip.ViewModels
 
         public MainViewModel()
         {
+            // 加载用户设置（窗口位置、模式、绑定目标等）
+            var settings = SettingsService.Load();
+            FilterType = (FilterType)settings.FilterType;
+            _mode = (PasteMode)settings.PasteMode;
+
             foreach (var it in StorageService.Load())
                 Items.Add(it);
             ApplyOrder();
@@ -55,12 +60,17 @@ namespace SuperClip.ViewModels
             _searchTimer.Start();
         }
 
-        partial void OnFilterTypeChanged(FilterType value) => RefreshDisplay();
+        partial void OnFilterTypeChanged(FilterType value)
+        {
+            RefreshDisplay();
+            SaveSettings();
+        }
 
         partial void OnModeChanged(PasteMode value)
         {
             // 模式切换时选中当前可见列表最顶部（不选被筛选过滤掉的项）
             SelectedItem = DisplayItems.FirstOrDefault();
+            SaveSettings();
         }
 
         // ---------- 剪贴板新增 ----------
@@ -218,6 +228,17 @@ namespace SuperClip.ViewModels
         // ---------- 过滤/搜索 ----------
         private void Save() => StorageService.Save(Items);
 
+        /// <summary>持久化当前用户设置（模式、筛选类型等）。</summary>
+        public void SaveSettings()
+        {
+            SettingsService.Save(new SettingsService.UserSettings
+            {
+                PasteMode = (int)Mode,
+                FilterType = (int)FilterType,
+                SplitSingleColumn = TableParser.SplitSingleColumn
+            });
+        }
+
         // 重建显示列表：原地增删/Move，不重新赋值 ItemsSource，保留选中与滚动位置。
         public void RefreshDisplay()
         {
@@ -236,9 +257,40 @@ namespace SuperClip.ViewModels
             }
             var kw = (SearchText ?? string.Empty).Trim();
             if (kw.Length > 0)
-                q = q.Where(x => x.Content.Contains(kw, StringComparison.OrdinalIgnoreCase)
+            {
+                // 全角→半角规范化：避免用户输入全角字符时匹配不到半角内容
+                var normalizedKw = NormalizeFullwidth(kw);
+                q = q.Where(x => x.Content.Contains(normalizedKw, StringComparison.OrdinalIgnoreCase)
+                              || x.SourceLabel.Contains(normalizedKw, StringComparison.OrdinalIgnoreCase)
+                              || x.Content.Contains(kw, StringComparison.OrdinalIgnoreCase)
                               || x.SourceLabel.Contains(kw, StringComparison.OrdinalIgnoreCase));
+            }
             return q.ToList();
+        }
+
+        /// <summary>全角→半角规范化：将全角字母/数字/标点转换为对应的半角字符。</summary>
+        private static string NormalizeFullwidth(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            var sb = new System.Text.StringBuilder(input.Length);
+            foreach (var c in input)
+            {
+                // 全角字母 A-Z (FF21-FF3A) → 半角 (0041-005A)
+                // 全角字母 a-z (FF41-FF5A) → 半角 (0061-007A)
+                // 全角数字 0-9 (FF10-FF19) → 半角 (0030-0039)
+                // 全角空格 (3000) → 半角空格 (0020)
+                if (c >= '\uFF21' && c <= '\uFF3A')
+                    sb.Append((char)(c - 0xFEE0));
+                else if (c >= '\uFF41' && c <= '\uFF5A')
+                    sb.Append((char)(c - 0xFED0));
+                else if (c >= '\uFF10' && c <= '\uFF19')
+                    sb.Append((char)(c - 0xFEE0));
+                else if (c == '\u3000')
+                    sb.Append(' ');
+                else
+                    sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         // 原地同步：让 col 最终持有 target 的所有元素，顺序一致。

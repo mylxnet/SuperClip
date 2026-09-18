@@ -1,6 +1,6 @@
 # SuperClip
 
-> **Windows 超级剪贴板** · Native WPF / .NET 8 desktop
+> **Windows 超级剪贴板** · Native WPF / .NET Core 3.1
 > 一个常驻后台的剪贴板增强工具：自动记录、Excel 表格拆分、双粘贴模式、进程绑定、托盘热键。
 
 [![Platform](https://img.shields.io/badge/platform-Windows%207%2B%20x64-0078d4?logo=windows)](https://www.microsoft.com/windows)
@@ -41,13 +41,14 @@ SuperClip 是一个 Windows 桌面剪贴板增强工具，**常驻后台 + 托�
 | **收藏 ★/☆** | 置顶分组、永久保留、不参与 500 条自动清理 |
 | **双粘贴模式** | 普通模式（双击 = 粘贴，位置不变）；快速模式（单击 = 选中，空格 = 粘贴，沉底变灰，顶部自动选中下一条） |
 | **进程绑定** | 工具栏靶心图标（🔴 红 = 未绑定，🟢 绿 = 已绑定），点击进入「点选模式」（十字光标 + 全局鼠标钩子） |
-| **全局热键** | `Ctrl + \`` 呼出/隐藏 |
+| **全局热键** | `Ctrl + ` ` 呼出/隐藏 |
 | **托盘常驻** | 收起后托盘图标保留；双击恢复、右键菜单「打开/退出」 |
 | **悬浮置顶** | 窗口默认置顶，可关闭 |
 | **单实例** | 全局命名 Mutex 防重复打开 |
 | **新手引导** | 9 步帮助窗口，首次使用清晰 |
 | **右键菜单** | 主窗口任意位置右键弹出 |
 | **状态栏** | 左侧绑定进程名，右侧署名 |
+| **设置持久化** | 窗口位置/大小、模式、绑定目标重启后保留 |
 
 ### 📸 截图
 
@@ -79,7 +80,7 @@ SuperClip 是一个 Windows 桌面剪贴板增强工具，**常驻后台 + 托�
 2. 解压到任意目录
 3. 右键 `install.bat` → 「以管理员身份运行」
 4. 双击桌面「SuperClip」图标启动
-5. 之后按 `Ctrl + \`` 随时呼出
+5. 之后按 `Ctrl + ` ` 随时呼出
 
 #### 开发者（从源码构建）
 
@@ -99,10 +100,10 @@ build.bat
 | 层级 | 技术 |
 |---|---|
 | **语言** | C# 12（实际用 C# 9 语法以兼容 .NET Core 3.1） |
-| **运行时** | .NET Core 3.1（自包含，目标机无需装运行时；选 3.1 是为了支持 Windows 7，.NET 5+ 仅支持 Win10/11） |
+| **运行时** | **.NET Core 3.1（自包含）** | 唯一官方支持 Windows 7 的 .NET；代价：2022-12 已 EOL、单文件约 130 MB。因程序纯本地无网络，安全暴露面极小 |
 | **UI** | WPF + MVVM（CommunityToolkit.Mvvm 8.2.2） |
 | **系统集成** | 纯 Win32 P/Invoke（剪贴板监听、托盘、热键、键盘模拟） |
-| **持久化** | System.Text.Json + 本地文件（`%AppData%\SuperClip\history.json`） |
+| **持久化** | System.Text.Json + 本地文件（`%AppData%\SuperClip\history.json` + `settings.json`） |
 | **分发** | 单文件自包含 + ReadyToRun（启动快） |
 
 ### 🔒 隐私与离线保证
@@ -110,7 +111,7 @@ build.bat
 - **完全离线运行**：无网络请求、无遥测、无分析
 - **可断网运行**：拔网线后所有功能正常
 - **可防火墙验证**：把 SuperClip.exe 加入防火墙黑名单，所有功能照常
-- **数据本地化**：历史记录仅存在 `%AppData%\SuperClip\history.json`
+- **数据本地化**：历史记录仅存在 `%AppData%\SuperClip\history.json`，设置存在 `settings.json`
 
 ### 📁 项目结构
 
@@ -125,13 +126,18 @@ SuperClip/
 │   ├── ClipboardMonitorService.cs # 剪贴板监听（WM_CLIPBOARDUPDATE）
 │   ├── TableParser.cs             # Excel TSV 拆分
 │   ├── PasteService.cs            # 模拟键入（写剪贴板 + Ctrl+V）
-│   └── TrayService.cs             # 系统托盘
+│   ├── TrayService.cs             # 系统托盘
+│   └── SettingsService.cs       # 用户设置持久化（窗口位置/模式等）
 ├── ViewModels/                # MVVM 视图模型
 │   └── MainViewModel.cs        # 主逻辑、增量更新列表
 ├── Views/                     # 视图
 │   ├── MainWindow.xaml(.cs)   # 主窗口
 │   ├── HelpWindow.xaml(.cs)   # 新手引导
 │   └── Converters.cs          # XAML 值转换器
+├── Tests/                     # 单元测试（xunit）
+│   ├── TableParserTests.cs    # 表格解析逻辑测试
+│   ├── StorageServiceTests.cs # 哈希计算测试
+│   └── MainViewModelTests.cs  # 模型与逻辑测试
 ├── Native/
 │   └── WinApi.cs              # Win32 P/Invoke 封装
 ├── installer/                 # 便携安装包脚本
@@ -147,7 +153,7 @@ SuperClip/
 
 | 快捷键 | 行为 |
 |---|---|
-| `Ctrl + \`` | 呼出 / 隐藏主窗口 |
+| `Ctrl + ` ` | 呼出 / 隐藏主窗口 |
 | 普通模式 + 双击 | 粘贴到光标处（条目变灰，位置不变） |
 | 快速模式 + 单击 | 选中条目（不粘贴） |
 | 快速模式 + 空格 | 粘贴到光标处（条目沉底变灰，顶部自动选中下一条） |

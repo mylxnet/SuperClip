@@ -42,7 +42,10 @@ namespace SuperClip.Services
             if (!WinApi.AddClipboardFormatListener(_hwndSource.Handle))
             {
                 // 监听注册失败不致命，UI 仍可手动复制粘贴，只是不会自动入列表
-                System.Diagnostics.Debug.WriteLine("AddClipboardFormatListener 失败");
+                // 仅在调试模式下输出，避免 Release 模式产生无关日志
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine("AddClipboardFormatListener 注册失败，剪贴板监听不可用");
+#endif
             }
         }
 
